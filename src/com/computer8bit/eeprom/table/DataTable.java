@@ -27,7 +27,7 @@ public class DataTable extends JTable implements MouseListener {
         this.setSelectionBackground(Color.LIGHT_GRAY);
         this.setCellSelectionEnabled(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        this.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        this.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 18));
         this.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -37,7 +37,7 @@ public class DataTable extends JTable implements MouseListener {
             }
         });
         this.setDefaultRenderer(String.class, new DefaultTableCellRenderer(){
-            Font font = new Font(Font.MONOSPACED, Font.BOLD, 14);
+            Font font = new Font(Font.MONOSPACED, Font.BOLD, 18);
             Color unsetColor = new Color(220, 220, 220);
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

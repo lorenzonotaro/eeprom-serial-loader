@@ -1,6 +1,7 @@
 package com.computer8bit.eeprom;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class Main {
     public static void main(String[] args) {
@@ -8,6 +9,7 @@ public class Main {
            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e){ e.printStackTrace();}
         JFrame frame = new JFrame("EEPROM Serial Programmer");
+        frame.setExtendedState(Frame.MAXIMIZED_BOTH);
         Window window = new Window();
         frame.setContentPane(window.contentPane);
         frame.setJMenuBar(window.getMenuBar());
