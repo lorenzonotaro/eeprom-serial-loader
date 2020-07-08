@@ -52,10 +52,13 @@ public class DataTable extends JTable implements MouseListener {
                 return this;
             }
         });
+        for(int i = 0; i < this.getColumnCount(); ++i){
+            this.getColumnModel().getColumn(i).setHeaderValue(" ");
+        }
         this.addMouseListener(this);
         this.getSelectionModel().addListSelectionListener(window::updateByteEditor);
 
-        this.getTableHeader().setVisible(false);
+        this.getTableHeader().setVisible(true);
         this.setIntercellSpacing(new Dimension(0, 0));
 
     }

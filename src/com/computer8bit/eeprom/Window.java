@@ -37,6 +37,7 @@ public class Window {
     private JProgressBar progressBar;
     private JLabel operationStatusLabel;
     private JButton readEEPROMButton;
+    private JPanel sidePanel;
     private JMenuBar menuBar;
 
     private SerialInterface serialInterface;
@@ -54,6 +55,7 @@ public class Window {
         writeEEPROMButton.addActionListener(this::writeData);
         byteEditor.getContentPane().setEnabled(false);
         readEEPROMButton.addActionListener(this::readDataFromEEPROM);
+        sidePanel.setMaximumSize(new Dimension(200, sidePanel.getMaximumSize().height));
     }
 
     private void readDataFromEEPROM(ActionEvent actionEvent) {
