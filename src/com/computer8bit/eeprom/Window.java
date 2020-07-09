@@ -190,6 +190,11 @@ public class Window {
         }
         doAsThread(() -> {
             try {
+                if(dataSet.getLength() > serialInterface.getMaxReadWriteLength()){
+                    int response = JOptionPane.showConfirmDialog(null, "You are trying to upload more data than the loader allows. Do you wish to continue (the additional data will be ignored)?", "Data length mismatch", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    if(response != JOptionPane.YES_OPTION)
+                        return;
+                }
                 serialInterface.writeData(dataSet.getDataAsBytes(), progressBar::setValue, operationStatusLabel::setText, checkContentsAfterWriting.isSelected());
                 operationStatusLabel.setText("Done.");
             } catch (SerialException ex) {
