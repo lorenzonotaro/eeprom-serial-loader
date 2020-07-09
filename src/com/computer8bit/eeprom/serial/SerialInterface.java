@@ -3,15 +3,14 @@ package com.computer8bit.eeprom.serial;
 import com.computer8bit.eeprom.Window;
 import com.fazecast.jSerialComm.SerialPort;
 
-import java.io.*;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
 
 public class SerialInterface {
     private static final String PROTOCOL_SIGNATURE = "EEPROMLD";
-    private static final int PAYLOAD_SIZE = 64, ROM_SIZE = 4096;
+    private int payloadSize, maxReadWriteLength;
     private static final int DEFAULT_TIMEOUT = 200;
     private static final int BAUD_RATE = 115200;
     private SerialPort activePort;
@@ -52,7 +51,7 @@ public class SerialInterface {
             throw new SerialException("error while writing to device");
         }
 
-        if (read(buffer) <= 0)
+        if (readUntil(buffer, 0, (byte) '\0') <= 0)
             throw new SerialException("device not responding");
 
         String val = new String(buffer).trim();
@@ -61,6 +60,22 @@ public class SerialInterface {
             throw new SerialException("invalid signature");
 
         return val.substring(PROTOCOL_SIGNATURE.length());
+    }
+
+    public synchronized void setParams() throws SerialException{
+        requireActivePort();
+        byte[] buffer = new byte[4];
+        buffer[0] = 'p';
+        if (write(buffer, 1) <= 0){
+            throw new SerialException("error while requesting parameters to loader");
+        }
+
+        if(read(buffer) != 4){
+            throw new SerialException("error while reading parameters from loader");
+        }
+
+        maxReadWriteLength = (buffer[0] << 8) + buffer[1];
+        payloadSize = (buffer[2] << 8) + buffer[3];
     }
 
     public synchronized void writeData(byte[] data, Consumer<Integer> progressFunction, Consumer<String> statusFunction) throws SerialException {
@@ -73,26 +88,24 @@ public class SerialInterface {
 
         try {
             if (data.length != Window.MAX_DATA_LENGTH)
-                data = Arrays.copyOf(data, ROM_SIZE);
+                data = Arrays.copyOf(data, maxReadWriteLength);
 
-            for (int i = 0; i < 16; i++) {
-                System.out.printf("%x ", data[i]);
-            }
-            System.out.println();
+            byte[] finalData = data;
+            System.out.printf("write: %d are != 0\n", IntStream.range(0, data.length).map(idx -> finalData[idx]).filter(i -> i != 0).count());
 
             tmpBuffer[0] = 'w';
             if (write(tmpBuffer) <= 0) {
                 throw new SerialException("unable to send write request to device");
             }
 
-            int PAYLOAD_COUNT = ROM_SIZE / PAYLOAD_SIZE;
+            int PAYLOAD_COUNT = maxReadWriteLength / payloadSize;
             for (int i = 0; i < PAYLOAD_COUNT; i++) {
                 statusFunction.accept("Sending block " + (i + 1) + "/" + PAYLOAD_COUNT);
                 if (read(tmpBuffer, 1) != 1)
                     throw new SerialException("unable to read section confirmation character");
                 if (tmpBuffer[0] != 'n')
                     throw new SerialException("device sent wrong section confirmation character (" + (char) tmpBuffer[0] + ")");
-                if (write(data, PAYLOAD_SIZE, i * PAYLOAD_SIZE) < PAYLOAD_SIZE)
+                if (write(data, payloadSize, i * payloadSize) < payloadSize)
                     throw new SerialException("unable to write to device (block " + (i + 1) + ")");
                 progressFunction.accept(Math.round((float) (i + 1) / PAYLOAD_COUNT * 100));
                 while (activePort.bytesAwaitingWrite() > 0) tryDelay(1);
@@ -109,12 +122,13 @@ public class SerialInterface {
             byte[] readData = readData(progressFunction, statusFunction);
 
             statusFunction.accept("Checking data...");
-            if (!Arrays.equals(readData, data))
+            if (Arrays.compareUnsigned(readData, 0, data.length, data, 0, data.length) != 0)
                 throw new SerialException("data check failed");
         } finally {
             activePort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, DEFAULT_TIMEOUT, 0);
         }
     }
+
 
     public byte[] readData(Consumer<Integer> progressFunction, Consumer<String> statusFunction) throws SerialException {
 
@@ -125,10 +139,10 @@ public class SerialInterface {
         activePort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 1000, 0);
 
         byte[] tmpBuffer = new byte[1];
-        int PAYLOAD_COUNT = ROM_SIZE / PAYLOAD_SIZE;
+        int PAYLOAD_COUNT = maxReadWriteLength / payloadSize;
 
         progressFunction.accept(0);
-        byte[] readData = new byte[ROM_SIZE];
+        byte[] readData = new byte[maxReadWriteLength];
         try {
             tmpBuffer[0] = 'r';
             if (write(tmpBuffer, 1) <= 0)
@@ -139,7 +153,7 @@ public class SerialInterface {
                 tmpBuffer[0] = 'n';
                 if (write(tmpBuffer, 1) <= 0)
                     throw new SerialException("unable to write section confirmation character during read");
-                if (read(readData, PAYLOAD_SIZE, i * PAYLOAD_SIZE) != PAYLOAD_SIZE)
+                if (read(readData, payloadSize, i * payloadSize) != payloadSize)
                     throw new SerialException("unable to read from device (block " + (i + 1) + ")");
                 progressFunction.accept(Math.round((float) (i + 1) / PAYLOAD_COUNT * 100));
             }
@@ -147,6 +161,7 @@ public class SerialInterface {
         } finally {
             activePort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, DEFAULT_TIMEOUT, 0);
         }
+        System.out.printf("read: %d are != 0\n", IntStream.range(0, readData.length).map(idx -> readData[idx]).filter(i -> i != 0).count());
         return readData;
     }
 
@@ -178,6 +193,13 @@ public class SerialInterface {
         return read(buffer, length, 0);
     }
 
+    private int readUntil(byte[] buffer, int offset, byte terminator){
+        for (int i = 0; i < buffer.length; i++) {
+            if (activePort.readBytes(buffer, 1, offset + i) <= 0 || buffer[offset + i] == terminator)
+                return i;
+        }
+        return buffer.length;
+    }
 
     private int read(byte[] buffer, int length, int offset) {
         for (int i = 0; i < length; i++) {
@@ -201,5 +223,13 @@ public class SerialInterface {
         buffer[2] = (byte) ((i >> 8) & 0xFF);
         buffer[3] = (byte) (i & 0xFF);
         return buffer;
+    }
+
+    public int getPayloadSize() {
+        return payloadSize;
+    }
+
+    public int getMaxReadWriteLength() {
+        return maxReadWriteLength;
     }
 }

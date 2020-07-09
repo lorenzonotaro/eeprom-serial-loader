@@ -17,14 +17,12 @@ import java.awt.event.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class Window {
 
-    private static final int BAUD_RATE = 9600;
     private static final int ROW_WIDTH = 16;
     JPanel contentPane;
-    public static final int DATA_LENGTH = 4096, MAX_DATA_LENGTH = 4096;
+    public static final int INITAL_DATA_LENGTH = 4096, MAX_DATA_LENGTH = 65536;
     private EEPROMDataSet dataSet;
 
     private JComboBox<PortDescriptor> serialPortSelection;
@@ -38,6 +36,8 @@ public class Window {
     private JLabel operationStatusLabel;
     private JButton readEEPROMButton;
     private JPanel sidePanel;
+    private JLabel chipSizeLabel;
+    private JLabel payloadSizeLabel;
     private JMenuBar menuBar;
 
     private SerialInterface serialInterface;
@@ -253,8 +253,11 @@ public class Window {
                 serialPortStatus.setText("Retrieving info...");
                 serialInterface.setActivePort(item.getPort());
                 String version = serialInterface.getLoaderVersion();
+                serialInterface.setParams();
                 serialPortStatus.setForeground(Color.GREEN.darker());
                 serialPortStatus.setText("OK! Chip " + version);
+                payloadSizeLabel.setText(String.valueOf(serialInterface.getPayloadSize()));
+                chipSizeLabel.setText(String.valueOf(serialInterface.getMaxReadWriteLength()));
                 this.serialPortValid = true;
             } catch (SerialException exception) {
                 serialPortStatus.setForeground(Color.RED);
@@ -290,10 +293,11 @@ public class Window {
     }
 
     private void createUIComponents() {
-        dataSet = new EEPROMDataSet(DATA_LENGTH);
+        dataSet = new EEPROMDataSet(INITAL_DATA_LENGTH);
         byteEditor = new ByteEditor(dataSet);
-        dataSizeSpinner = new JSpinner(new SpinnerNumberModel(DATA_LENGTH, 1, MAX_DATA_LENGTH, 10));
+        dataSizeSpinner = new JSpinner(new SpinnerNumberModel(INITAL_DATA_LENGTH, 1, MAX_DATA_LENGTH, 10));
         serialPortSelection = new JComboBox<>(PortDescriptor.getDescriptors());
+        serialPortSelection.setMaximumSize(serialPortSelection.getPreferredSize());
         setupTable();
     }
 

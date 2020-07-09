@@ -13,7 +13,10 @@ public class PortDescriptor {
     public String toString() {
         if(port == null)
             return "";
-        return port.getSystemPortName() + " (" + port.getDescriptivePortName() + ")";
+        if(System.getProperty("os.name").contains("Windows"))
+                return port.getSystemPortName() + " (" + port.getDescriptivePortName() + ")";
+        else
+            return port.getDescriptivePortName();
     }
 
     public static PortDescriptor[] getDescriptors() {
