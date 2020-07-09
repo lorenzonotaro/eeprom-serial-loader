@@ -83,7 +83,7 @@ public class TablePopupMenu extends JPopupMenu {
         if(strVal == null) return;
         byte value;
         try{
-            value = Util.parseByte(strVal);
+            value = Util.parseByte(strVal, ((DataTableModel)table.getModel()).getViewMode());
             setSelectionTo(value);
         }catch (NumberFormatException exception){
             JOptionPane.showMessageDialog(null,  "Invalid input value '" + strVal + "'", "Error.", JOptionPane.ERROR_MESSAGE);

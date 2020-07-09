@@ -8,14 +8,16 @@ import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.*;
 
-class DataTableModel extends AbstractTableModel {
+public class DataTableModel extends AbstractTableModel {
 
+    private ViewMode viewMode;
     private EEPROMDataSet data;
     private int rowWidth;
 
     DataTableModel(EEPROMDataSet data, int rowWidth){
         super();
         this.data = data;
+        this.viewMode = ViewMode.HEXADECIMAL;
         data.addChangeListener(this::dataChanged);
         this.rowWidth = rowWidth;
     }
@@ -60,7 +62,9 @@ class DataTableModel extends AbstractTableModel {
         }else{
             return "";
         }
-        return String.format(isFirstCol ? "0x%04x" : "0x%02x", val);
+        return viewMode.equals(ViewMode.HEXADECIMAL) ?
+                String.format(isFirstCol ? "%04x" : "%02x", val) :
+                String.format("%d", val);
     }
 
     @Override
@@ -72,7 +76,7 @@ class DataTableModel extends AbstractTableModel {
         String strVal = aValue.toString();
         byte value;
         try{
-            value = Util.parseByte(strVal);
+            value = Util.parseByte(strVal, this.viewMode);
             data.getByteAt(rowIndex * rowWidth + columnIndex - 1).setValue(value);
         }catch(NumberFormatException e){
             JOptionPane.showMessageDialog(null,  "Invalid input value '" + strVal + "'", "Error.", JOptionPane.ERROR_MESSAGE);
@@ -87,6 +91,16 @@ class DataTableModel extends AbstractTableModel {
                 TableModelEvent.ALL_COLUMNS, //column
                 TableModelEvent.UPDATE)); //changeType
     }
+
+    public void setViewMode(ViewMode viewMode) {
+        this.viewMode = viewMode;
+        fireTableDataChanged();
+    }
+
+    public ViewMode getViewMode() {
+        return viewMode;
+    }
+
 }
 
 

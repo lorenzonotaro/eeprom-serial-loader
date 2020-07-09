@@ -6,6 +6,7 @@ import com.computer8bit.eeprom.serial.PortDescriptor;
 import com.computer8bit.eeprom.serial.SerialException;
 import com.computer8bit.eeprom.serial.SerialInterface;
 import com.computer8bit.eeprom.table.DataTable;
+import com.computer8bit.eeprom.table.DataTableModel;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -17,6 +18,9 @@ import java.awt.event.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
+
+import static com.computer8bit.eeprom.table.ViewMode.DECIMAL;
+import static com.computer8bit.eeprom.table.ViewMode.HEXADECIMAL;
 
 public class Window {
 
@@ -38,6 +42,9 @@ public class Window {
     private JPanel sidePanel;
     private JLabel chipSizeLabel;
     private JLabel payloadSizeLabel;
+    private JRadioButton hexViewMode;
+    private JRadioButton decimalViewMode;
+    private JCheckBox checkContentsAfterWriting;
     private JMenuBar menuBar;
 
     private SerialInterface serialInterface;
@@ -56,6 +63,11 @@ public class Window {
         byteEditor.getContentPane().setEnabled(false);
         readEEPROMButton.addActionListener(this::readDataFromEEPROM);
         sidePanel.setMaximumSize(new Dimension(200, sidePanel.getMaximumSize().height));
+        ButtonGroup viewModeBG = new ButtonGroup();
+        viewModeBG.add(decimalViewMode);
+        viewModeBG.add(hexViewMode);
+        hexViewMode.addActionListener(e -> {if(hexViewMode.isSelected()) ((DataTableModel)dataTable.getModel()).setViewMode(HEXADECIMAL);});
+        decimalViewMode.addActionListener(e -> {if(decimalViewMode.isSelected()) ((DataTableModel)dataTable.getModel()).setViewMode(DECIMAL);});
     }
 
     private void readDataFromEEPROM(ActionEvent actionEvent) {
@@ -178,7 +190,7 @@ public class Window {
         }
         doAsThread(() -> {
             try {
-                serialInterface.writeData(dataSet.getDataAsBytes(), progressBar::setValue, operationStatusLabel::setText);
+                serialInterface.writeData(dataSet.getDataAsBytes(), progressBar::setValue, operationStatusLabel::setText, checkContentsAfterWriting.isSelected());
                 operationStatusLabel.setText("Done.");
             } catch (SerialException ex) {
                 JOptionPane.showMessageDialog(null, "Unable to write to EEPROM: " + ex.getMessage() , "Error", JOptionPane.ERROR_MESSAGE);

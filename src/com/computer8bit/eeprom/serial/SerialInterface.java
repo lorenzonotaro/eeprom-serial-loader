@@ -78,7 +78,7 @@ public class SerialInterface {
         payloadSize = (buffer[2] << 8) + buffer[3];
     }
 
-    public synchronized void writeData(byte[] data, Consumer<Integer> progressFunction, Consumer<String> statusFunction) throws SerialException {
+    public synchronized void writeData(byte[] data, Consumer<Integer> progressFunction, Consumer<String> statusFunction, boolean checkContents) throws SerialException {
         byte[] tmpBuffer = new byte[1];
         requireActivePort();
 
@@ -119,11 +119,13 @@ public class SerialInterface {
 
             statusFunction.accept("");
             progressFunction.accept(0);
-            byte[] readData = readData(progressFunction, statusFunction);
+            if(checkContents) {
+                byte[] readData = readData(progressFunction, statusFunction);
 
-            statusFunction.accept("Checking data...");
-            if (Arrays.compareUnsigned(readData, 0, data.length, data, 0, data.length) != 0)
-                throw new SerialException("data check failed");
+                statusFunction.accept("Checking data...");
+                if (Arrays.compareUnsigned(readData, 0, data.length, data, 0, data.length) != 0)
+                    throw new SerialException("data check failed");
+            }
         } finally {
             activePort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, DEFAULT_TIMEOUT, 0);
         }

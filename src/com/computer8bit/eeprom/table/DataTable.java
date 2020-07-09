@@ -45,7 +45,7 @@ public class DataTable extends JTable implements MouseListener {
                 setBackground(window.getContentPane().getBackground());
                 if (column == 0)
                     setFont(font);
-                else if("0x00".equals(value))
+                else if(value.toString().replace("0", "").trim().length() == 0)
                     setBackground(unsetColor);
                 if(isSelected)
                     setBackground(Color.LIGHT_GRAY);

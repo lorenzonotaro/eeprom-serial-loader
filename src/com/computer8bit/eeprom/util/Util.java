@@ -1,10 +1,14 @@
 package com.computer8bit.eeprom.util;
 
+import com.computer8bit.eeprom.table.ViewMode;
+
 public class Util {
-    public static byte parseByte(String strVal){
+    public static byte parseByte(String strVal, ViewMode viewMode){
         int value;
         if(strVal.startsWith("0x")){
             value = Integer.parseInt(strVal.substring(2).toUpperCase(), 16);
+        }else if(ViewMode.HEXADECIMAL.equals(viewMode)){
+            value = Integer.parseInt(strVal.toUpperCase(), 16);
         }else{
             value = Integer.parseInt(strVal, 10);
         }
