@@ -9,6 +9,8 @@ public class Util {
             value = Integer.parseInt(strVal.substring(2).toUpperCase(), 16);
         }else if(ViewMode.HEXADECIMAL.equals(viewMode)){
             value = Integer.parseInt(strVal.toUpperCase(), 16);
+        }else if(ViewMode.ASCII.equals(viewMode)){
+            value = strVal.charAt(strVal.length() - 1);
         }else{
             value = Integer.parseInt(strVal, 10);
         }

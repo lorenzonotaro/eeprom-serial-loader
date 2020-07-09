@@ -62,9 +62,21 @@ public class DataTableModel extends AbstractTableModel {
         }else{
             return "";
         }
-        return viewMode.equals(ViewMode.HEXADECIMAL) ?
-                String.format(isFirstCol ? "%04x" : "%02x", val) :
-                String.format("%d", val);
+        switch(viewMode){
+
+            case DECIMAL:
+                return String.format("%d", val);
+            case HEXADECIMAL:
+                return String.format(isFirstCol ? "%04x" : "%02x", val);
+            case ASCII:
+                if(isFirstCol){
+                    return String.format("%04x", val);
+                }else{
+                    return String.format("%c", (char) val);
+                }
+            default:
+                return null;
+        }
     }
 
     @Override
@@ -101,6 +113,18 @@ public class DataTableModel extends AbstractTableModel {
         return viewMode;
     }
 
+    public boolean isZero(String value) {
+        switch(viewMode){
+            case DECIMAL:
+                return Integer.parseInt(value, 10) == 0;
+            case HEXADECIMAL:
+                return Integer.parseInt(value, 16) == 0;
+            case ASCII:
+                return value.charAt(0) == '\0';
+            default:
+                return false;
+        }
+    }
 }
 
 

@@ -19,8 +19,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
 
-import static com.computer8bit.eeprom.table.ViewMode.DECIMAL;
-import static com.computer8bit.eeprom.table.ViewMode.HEXADECIMAL;
+import static com.computer8bit.eeprom.table.ViewMode.*;
 
 public class Window {
 
@@ -45,9 +44,9 @@ public class Window {
     private JRadioButton hexViewMode;
     private JRadioButton decimalViewMode;
     private JCheckBox checkContentsAfterWriting;
-    private JMenuBar menuBar;
-
-    private SerialInterface serialInterface;
+    private JRadioButton asciiViewMode;
+    private final JMenuBar menuBar;
+    private final SerialInterface serialInterface;
     private boolean serialPortValid = false;
 
     Window() {
@@ -66,8 +65,10 @@ public class Window {
         ButtonGroup viewModeBG = new ButtonGroup();
         viewModeBG.add(decimalViewMode);
         viewModeBG.add(hexViewMode);
+        viewModeBG.add(asciiViewMode);
         hexViewMode.addActionListener(e -> {if(hexViewMode.isSelected()) ((DataTableModel)dataTable.getModel()).setViewMode(HEXADECIMAL);});
         decimalViewMode.addActionListener(e -> {if(decimalViewMode.isSelected()) ((DataTableModel)dataTable.getModel()).setViewMode(DECIMAL);});
+        asciiViewMode.addActionListener(e -> {if(asciiViewMode.isSelected()) ((DataTableModel)dataTable.getModel()).setViewMode(ASCII);});
     }
 
     private void readDataFromEEPROM(ActionEvent actionEvent) {
@@ -89,10 +90,10 @@ public class Window {
     private JMenu makeFileMenu() {
         JMenu fileMenu = new JMenu("File");
         JMenuItem open = new JMenuItem("Open...");
-        open.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
+        open.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         open.addActionListener(this::openFile);
         JMenuItem save = new JMenuItem("Save...");
-        save.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
+        save.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         save.addActionListener(this::saveFile);
         fileMenu.add(open);
         fileMenu.add(save);
