@@ -10,11 +10,11 @@ The loader is the interface between the client and the EEPROM chip. It needs to 
 In its default state, the loader must be constantly waiting for requests from the serial port.
 As explained below, since most microcontrollers have a very limited amount of memory, the exchange of EEPROM data from and to the loader will happen in smaller blocks, or payloads, of a size determined by the loader.
 
-## 2. Serial parameters
-The baud rate must be `115200` (the highest baud rate supported by Arduino Nano).
-The other serial parameters are the default parameters in Arduino: `8 data bits`, `no parity`, `1 stop bit`.
-
-The loader must also have a 1-second read timeout when expecting data or confirmation from the client, but not during the default state of listening for requests.
+## 2. Serial parameters & info
+* The baud rate must be `115200` (the highest baud rate supported by Arduino Nano).
+* The other serial parameters are the default parameters of Arduino: `8 data bits`, `no parity`, `1 stop bit`.
+* The loader must also have a 1-second read timeout when expecting data or confirmation from the client, but not during the default state of listening for requests.
+* Whenever a fixed number of bytes is exchanged between the loader and the client (e.g. a 2-byte unsigned integer, see parameters), the data must be sent in Big Endian order.
 ## 3. Requests
 The loader must be listening for requests sent by the client application. These requests are in the form of a single ASCII character.
 
