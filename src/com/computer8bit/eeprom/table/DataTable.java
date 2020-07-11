@@ -59,6 +59,7 @@ public class DataTable extends JTable implements MouseListener {
         this.getSelectionModel().addListSelectionListener(window::updateByteEditor);
 
         this.getTableHeader().setVisible(true);
+        this.getTableHeader().setReorderingAllowed(false);
         this.setIntercellSpacing(new Dimension(0, 0));
 
     }
