@@ -2,6 +2,7 @@ package com.computer8bit.eeprom;
 
 import com.computer8bit.eeprom.data.EEPROMDataByte;
 import com.computer8bit.eeprom.data.EEPROMDataSet;
+import com.computer8bit.eeprom.data.FileIO;
 import com.computer8bit.eeprom.serial.PortDescriptor;
 import com.computer8bit.eeprom.serial.SerialException;
 import com.computer8bit.eeprom.serial.SerialInterface;
@@ -131,13 +132,7 @@ public class Window {
         int response = fc.showDialog(null, "Import");
         if (response == JFileChooser.APPROVE_OPTION) {
             try {
-                byte[] bytes = Files.readAllBytes(fc.getSelectedFile().toPath());
-                EEPROMDataByte[] newData = new EEPROMDataByte[bytes.length];
-                for (int i = 0; i < bytes.length; i++) {
-                    byte b = bytes[i];
-                    newData[i] = new EEPROMDataByte(b, null, i);
-                }
-                setDataSet(newData);
+                setDataSet(FileIO.importRawData(fc.getSelectedFile().toPath()));
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Unable to export the file. (" + e.getMessage() + ")", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -154,10 +149,8 @@ public class Window {
         int response = fc.showDialog(null, "Export");
         if (response == JFileChooser.APPROVE_OPTION) {
             String filename = fc.getSelectedFile().getAbsolutePath();
-            try (FileWriter fw = new FileWriter(filename)) {
-                for (EEPROMDataByte dataByte : dataSet.getData()) {
-                    fw.write(dataByte.getValue());
-                }
+            try {
+                FileIO.exportRawData(filename, dataSet.getData());
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Unable to export the file. (" + e.getMessage() + ")", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -171,13 +164,7 @@ public class Window {
         if (response == JFileChooser.APPROVE_OPTION) {
             String filename = fc.getSelectedFile().getAbsolutePath();
             try (FileWriter fw = new FileWriter(filename)) {
-                EEPROMDataByte[] data = dataSet.getData();
-                for (int i = 0; i < data.length; i++) {
-                    EEPROMDataByte dataByte = data[i];
-                    fw.write(String.format("0x%02x ", dataByte.getValue()));
-                    if((i + 1) % ROW_WIDTH == 0)
-                        fw.write('\n');
-                }
+                FileIO.exportHexDump(filename, dataSet.getData());
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Unable to export the file. (" + e.getMessage() + ")", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -214,10 +201,8 @@ public class Window {
         if (response == JFileChooser.APPROVE_OPTION) {
             String filename = fc.getSelectedFile().getAbsolutePath();
             if(!filename.endsWith(".eeprom")) filename += ".eeprom";
-            try (FileWriter fw = new FileWriter(filename)) {
-                Gson gs = new GsonBuilder().create();
-                String json = gs.toJson(dataSet.getData(), EEPROMDataByte[].class);
-                fw.write(json);
+            try {
+                FileIO.saveFile(filename, dataSet.getData());
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Unable to save the file. (" + e.getMessage() + ")", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -232,9 +217,7 @@ public class Window {
         int response = fc.showDialog(contentPane, "Open");
         if (response == JFileChooser.APPROVE_OPTION) {
             try {
-                String str = new String(Files.readAllBytes(fc.getSelectedFile().toPath()));
-                Gson gs = new GsonBuilder().create();
-                EEPROMDataByte[] newData = gs.fromJson(str, EEPROMDataByte[].class);
+                EEPROMDataByte[] newData = FileIO.loadFile(fc.getSelectedFile().toPath());
                 if (newData.length > MAX_DATA_LENGTH) {
                     JOptionPane.showMessageDialog(contentPane, "The input file (" + newData.length + " bytes) exceeds the maximum length: only the first " + MAX_DATA_LENGTH + " bytes will be imported.", "Input cropped", JOptionPane.INFORMATION_MESSAGE);
                     newData = Arrays.copyOf(newData, MAX_DATA_LENGTH);
