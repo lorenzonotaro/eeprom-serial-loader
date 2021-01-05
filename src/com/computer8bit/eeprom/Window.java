@@ -8,8 +8,6 @@ import com.computer8bit.eeprom.serial.SerialException;
 import com.computer8bit.eeprom.serial.SerialInterface;
 import com.computer8bit.eeprom.table.DataTable;
 import com.computer8bit.eeprom.table.DataTableModel;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -17,7 +15,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 import static com.computer8bit.eeprom.table.ViewMode.*;
@@ -25,6 +23,7 @@ import static com.computer8bit.eeprom.table.ViewMode.*;
 public class Window {
 
     private static final int ROW_WIDTH = 16;
+    private final JFrame frame;
     JPanel contentPane;
     public static final int INITAL_DATA_LENGTH = 4096, MAX_DATA_LENGTH = 65536;
     private EEPROMDataSet dataSet;
@@ -50,7 +49,8 @@ public class Window {
     private final SerialInterface serialInterface;
     private boolean serialPortValid = false;
 
-    Window() {
+    Window(JFrame frame) {
+        this.frame = frame;
         refreshSerialPorts.addActionListener(this::refreshSerialPorts);
         dataSizeSpinner.addChangeListener(this::dataSizeChanged);
         serialPortSelection.addItemListener(this::serialPortChanged);
@@ -92,10 +92,10 @@ public class Window {
         JMenu fileMenu = new JMenu("File");
         JMenuItem open = new JMenuItem("Open...");
         open.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        open.addActionListener(this::openFile);
+        open.addActionListener(this::openFilePressed);
         JMenuItem save = new JMenuItem("Save...");
         save.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        save.addActionListener(this::saveFile);
+        save.addActionListener(this::saveFilePressed);
         fileMenu.add(open);
         fileMenu.add(save);
 
@@ -192,7 +192,7 @@ public class Window {
 
     }
 
-    private void saveFile(ActionEvent actionEvent) {
+    private void saveFilePressed(ActionEvent actionEvent) {
         JFileChooser fc = new JFileChooser();
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fc.setFileFilter(new FileNameExtensionFilter("EEPROM data files", "eeprom"));
@@ -203,29 +203,35 @@ public class Window {
             if(!filename.endsWith(".eeprom")) filename += ".eeprom";
             try {
                 FileIO.saveFile(filename, dataSet.getData());
+                frame.setTitle(Main.WINDOW_TITLE + " - " + filename);
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(null, "Unable to save the file. (" + e.getMessage() + ")", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-    private void openFile(ActionEvent actionEvent) {
+    private void openFilePressed(ActionEvent actionEvent) {
         JFileChooser fc = new JFileChooser();
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fc.setFileFilter(new FileNameExtensionFilter("EEPROM data files", "eeprom"));
         fc.setAcceptAllFileFilterUsed(true);
         int response = fc.showDialog(contentPane, "Open");
         if (response == JFileChooser.APPROVE_OPTION) {
-            try {
-                EEPROMDataByte[] newData = FileIO.loadFile(fc.getSelectedFile().toPath());
-                if (newData.length > MAX_DATA_LENGTH) {
-                    JOptionPane.showMessageDialog(contentPane, "The input file (" + newData.length + " bytes) exceeds the maximum length: only the first " + MAX_DATA_LENGTH + " bytes will be imported.", "Input cropped", JOptionPane.INFORMATION_MESSAGE);
-                    newData = Arrays.copyOf(newData, MAX_DATA_LENGTH);
-                }
-                setDataSet(newData);
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(contentPane, "Unable to save the file. (" + e.getMessage() + ")", "Error", JOptionPane.ERROR_MESSAGE);
+            openFile(fc.getSelectedFile().toPath());
+        }
+    }
+
+    void openFile(Path path) {
+        try {
+            EEPROMDataByte[] newData = FileIO.loadFile(path);
+            if (newData.length > MAX_DATA_LENGTH) {
+                JOptionPane.showMessageDialog(contentPane, "The input file (" + newData.length + " bytes) exceeds the maximum length: only the first " + MAX_DATA_LENGTH + " bytes will be imported.", "Input cropped", JOptionPane.INFORMATION_MESSAGE);
+                newData = Arrays.copyOf(newData, MAX_DATA_LENGTH);
             }
+            setDataSet(newData);
+            frame.setTitle(Main.WINDOW_TITLE + " - " + path.toString());
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(contentPane, "Unable to save the file. (" + e.getMessage() + ")", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
