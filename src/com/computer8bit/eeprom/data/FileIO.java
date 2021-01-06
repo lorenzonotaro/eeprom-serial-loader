@@ -3,6 +3,7 @@ package com.computer8bit.eeprom.data;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,7 +23,7 @@ public final class FileIO {
     }
 
     public static void exportRawData(String filename, EEPROMDataByte[] data) throws IOException {
-        try (FileWriter fw = new FileWriter(filename)) {
+        try (FileOutputStream fw = new FileOutputStream(filename)) {
             for (EEPROMDataByte dataByte : data) {
                 fw.write(dataByte.getValue());
             }
